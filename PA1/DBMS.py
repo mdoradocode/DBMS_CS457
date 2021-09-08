@@ -20,3 +20,5 @@
 #   Query (Display Table contents)
 #   update Table
 #   Help function to display commands
+def main():
+    a = 0
