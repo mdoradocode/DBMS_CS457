@@ -20,5 +20,87 @@
 #   Query (Display Table contents)
 #   update Table
 #   Help function to display commands
+#   CREATE TABLE tbl_1 (a1 int, a2 varchar(20))
+
+##---Libraries---##
+#This allows me to interact with CSV files easily
+import csv
+#This allows for easy file work and listing
+from os import path, walk
+import os
+#This allows for the path of the current directory and script directory to be easily found
+import pathlib
+
+##---Global Variables---##
+#For directories and taking in commands
+commandWhole = None
+argumentsWhole = None
+commandSplit = None
+argumentsSplit = None
+scriptDir = pathlib.Path(__file__).parent.resolve()
+currentDir = pathlib.Path(__file__).parent.resolve()
+path = None
+databaseList = []
+##maybe not going to work
+currDBTables = []
+
+
 def main():
-    a = 0
+    print(scriptDir)
+    print(currentDir)
+    checkDatabaseList()
+    takeCommand()
+    createDatabase('db_1')
+
+
+    ##example = Table(commandSplit[2], *argumentsSplit)
+
+def createDatabase(databaseName):
+    global path
+    path = os.path.join(scriptDir,databaseName)
+    try:
+        os.mkdir(path)
+    except OSError as error:
+        print('!Failed to create database "' + databaseName + '" because it already exists.')
+
+##This lists the current working directory/database##
+##def getCurrDir():
+    ##global currentDir
+    ##print("The current working dir is: ")
+    ##print(currentDir)
+
+##This will gather a list of current databases##
+def checkDatabaseList():
+    global scriptDir, databaseList
+    for (dirPath, dirNames, fileNames) in walk(scriptDir):
+        databaseList.extend(dirNames)
+    print(databaseList)
+
+##This will gather a list of current tables in the working database##
+def checkTables():
+    global currentDir
+
+##This takes in command line user prompts and turns them into lists for access##
+def takeCommand():
+    global commandWhole,argumentsWhole,argumentsSplit,commandSplit
+    commandWhole, argumentsWhole = input('Enter Command: ').split(' (')
+    argumentsWhole = argumentsWhole.removesuffix(')')
+    ##This is needed to take off the trailign ')'
+    argumentsWhole = argumentsWhole.removesuffix(')')
+
+    argumentsSplit = argumentsWhole.split(',')
+    commandSplit = commandWhole.split(' ')
+    pass
+
+##Table Class##
+class Table:
+    def __init__(self, tableName, *args):
+        ##Need to check if the table exists before creating one and throw error if it does
+        with open(tableName + '.csv', 'w', encoding='UTF8',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(args)
+    def deleteTable(self):
+        pass
+
+
+main()
