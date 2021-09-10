@@ -46,14 +46,43 @@ currDBTables = []
 
 
 def main():
-    print(scriptDir)
-    print(currentDir)
-    checkDatabaseList()
+    compileDatabaseList()
     takeCommand()
-    createDatabase('db_1')
+    createTable()
+    createDatabase('db_3')
+    compileDatabaseList()
+    createDatabase('db_3')
 
 
-    ##example = Table(commandSplit[2], *argumentsSplit)
+def createTable():
+    global currentDir, commandSplit
+    fullName = os.path.join(currentDir,commandSplit[2]+'.csv')
+    with open(fullName, 'w', encoding='UTF8',newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(argumentsSplit)
+
+def commandInterpt():
+    global commandSplit
+    #All commands that begin with CREATE, which can be followed by TABLE or DATABASE
+    if commandSplit[0] == 'CREATE':
+        ##This also needs to make sure you are accessing a database
+        if commandSplit[1] == 'TABLE':
+            createTable()
+        elif commandSplit[1] == 'DATABASE':
+            createDatabase(commandSplit[2])
+    elif commandSplit[0] == 'USE':
+        ##A Database will be the only command to follow this one
+        if commandSplit[1] == 'TABLE':
+            createDatabase(commandSplit[2])
+        pass
+    elif commandSplit[0] == 'DROP':
+        if commandSplit[1] == 'TABLE':
+            pass
+        elif commandSplit[0] == 'DATABASE':
+            pass    
+    elif commandSplit[0] == 'SELECT':
+        ##Will always be followed by * FROM tableName
+        pass
 
 def createDatabase(databaseName):
     global path
@@ -63,18 +92,12 @@ def createDatabase(databaseName):
     except OSError as error:
         print('!Failed to create database "' + databaseName + '" because it already exists.')
 
-##This lists the current working directory/database##
-##def getCurrDir():
-    ##global currentDir
-    ##print("The current working dir is: ")
-    ##print(currentDir)
-
 ##This will gather a list of current databases##
-def checkDatabaseList():
+def compileDatabaseList():
     global scriptDir, databaseList
+    databaseList = []
     for (dirPath, dirNames, fileNames) in walk(scriptDir):
         databaseList.extend(dirNames)
-    print(databaseList)
 
 ##This will gather a list of current tables in the working database##
 def checkTables():
@@ -84,23 +107,10 @@ def checkTables():
 def takeCommand():
     global commandWhole,argumentsWhole,argumentsSplit,commandSplit
     commandWhole, argumentsWhole = input('Enter Command: ').split(' (')
+    ##This is needed to take off the trailing ')'
     argumentsWhole = argumentsWhole.removesuffix(')')
-    ##This is needed to take off the trailign ')'
-    argumentsWhole = argumentsWhole.removesuffix(')')
-
-    argumentsSplit = argumentsWhole.split(',')
+    argumentsSplit = argumentsWhole.split(', ')
     commandSplit = commandWhole.split(' ')
-    pass
-
-##Table Class##
-class Table:
-    def __init__(self, tableName, *args):
-        ##Need to check if the table exists before creating one and throw error if it does
-        with open(tableName + '.csv', 'w', encoding='UTF8',newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(args)
-    def deleteTable(self):
-        pass
 
 
 main()
