@@ -37,44 +37,56 @@ commandWhole = None
 argumentsWhole = None
 commandSplit = None
 argumentsSplit = None
-scriptDir = pathlib.Path(__file__).parent.resolve()
+##scriptDir = pathlib.Path(__file__).parent.resolve()
 currentDir = pathlib.Path(__file__).parent.resolve()
 path = None
 databaseList = []
 ##maybe not going to work
-currDBTables = []
+currentDB = []
 
 
 def main():
-    compileDatabaseList()
-    takeCommand()
-    createTable()
-    createDatabase('db_3')
-    compileDatabaseList()
-    createDatabase('db_3')
-
+    x = 1
+    while x != 0:
+        compileDatabaseList()
+        takeCommand()
+        commandInterpt()
+def getCurrentDir():
+    global currentDB, currentDir
+    return os.path.join(currentDir, currentDB)
+#/def setCurrentDir():
+    #global currentDir,scriptDir
+    #currentDir = scriptDir
+    #currentDir = os.path.join(currentDir,commandSplit[1])
+    ##print(currentDir)
 
 def createTable():
-    global currentDir, commandSplit
-    fullName = os.path.join(currentDir,commandSplit[2]+'.csv')
+    global commandSplit
+    tempDir = getCurrentDir()
+    fullName = os.path.join(tempDir,commandSplit[2]+'.csv')
     with open(fullName, 'w', encoding='UTF8',newline='') as f:
         writer = csv.writer(f)
         writer.writerow(argumentsSplit)
 
 def commandInterpt():
-    global commandSplit
+    global commandSplit, currentDir, scriptDir,currentDB
     #All commands that begin with CREATE, which can be followed by TABLE or DATABASE
     if commandSplit[0] == 'CREATE':
         ##This also needs to make sure you are accessing a database
         if commandSplit[1] == 'TABLE':
-            createTable()
+            if currentDB != []:
+                createTable()
+            else:
+                print("!Failed to make " + commandSplit[2] + " because you are not in a Database")
         elif commandSplit[1] == 'DATABASE':
-            createDatabase(commandSplit[2])
+                createDatabase(commandSplit[2])
     elif commandSplit[0] == 'USE':
         ##A Database will be the only command to follow this one
-        if commandSplit[1] == 'TABLE':
-            createDatabase(commandSplit[2])
-        pass
+        if commandSplit[1] in databaseList:
+            currentDB = commandSplit[1]
+        else:
+            ##Send them back to the command loop
+            print("!Failed to use " + commandSplit[1] + " as it doesn't exist")
     elif commandSplit[0] == 'DROP':
         if commandSplit[1] == 'TABLE':
             pass
@@ -83,10 +95,12 @@ def commandInterpt():
     elif commandSplit[0] == 'SELECT':
         ##Will always be followed by * FROM tableName
         pass
+    elif commandSplit[0] == 'ALTER':
+        pass
 
 def createDatabase(databaseName):
     global path
-    path = os.path.join(scriptDir,databaseName)
+    path = os.path.join(currentDir,databaseName)
     try:
         os.mkdir(path)
     except OSError as error:
@@ -96,7 +110,7 @@ def createDatabase(databaseName):
 def compileDatabaseList():
     global scriptDir, databaseList
     databaseList = []
-    for (dirPath, dirNames, fileNames) in walk(scriptDir):
+    for (dirPath, dirNames, fileNames) in walk(currentDir):
         databaseList.extend(dirNames)
 
 ##This will gather a list of current tables in the working database##
@@ -106,11 +120,20 @@ def checkTables():
 ##This takes in command line user prompts and turns them into lists for access##
 def takeCommand():
     global commandWhole,argumentsWhole,argumentsSplit,commandSplit
-    commandWhole, argumentsWhole = input('Enter Command: ').split(' (')
-    ##This is needed to take off the trailing ')'
-    argumentsWhole = argumentsWhole.removesuffix(')')
-    argumentsSplit = argumentsWhole.split(', ')
-    commandSplit = commandWhole.split(' ')
+    tempInput = input('Enter Command: ')
+    ##print(tempInput)
+    try:
+        commandWhole, argumentsWhole = tempInput.split(' (')
+        ##This is needed to take off the trailing ')'
+        argumentsWhole = argumentsWhole.removesuffix(')')
+        argumentsSplit = argumentsWhole.split(', ')
+        commandSplit = commandWhole.split(' ')
+        ##print(argumentsSplit)
+        ##print(commandSplit)
+    except ValueError:
+        commandSplit = tempInput.split(' ')
+        ##print(commandWhole)
+        ##print(commandSplit)
 
 
 main()
