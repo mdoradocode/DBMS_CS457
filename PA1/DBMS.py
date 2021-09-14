@@ -13,20 +13,23 @@
 #       "ALTER TABLE test_tbl ADD a3 float" <enter> **Add an attribute to the selected table
 # Functions to implement
 #!   Database Create
-#   Database Destroy
+#!   Database Destroy
 #!   Table create
-#   Table destroy
-#   Query (Display Table contents)
+#!   Table destroy
+#!   Query (Display Table contents)
 #   update Table
 #   Help function to display commands
 #   CREATE TABLE tbl_1 (a1 int, a2 varchar(20))
+#   CREATE TABLE tbl_2 (a1 Float, a2 varchar(40))
+#   CREATE TABLE tbl_3 (a1 longInt, a2 varchar(20), a3 string(60))
+#   SELECT * FROM 
 
 ##---Libraries---##
 #This allows me to interact with CSV files easily
 import csv
 #This allows for easy file work and listing
 import os
-from os import path, walk
+from os import path, read, walk
 #This allows for the path of the current directory and script directory to be easily found
 import pathlib
 import sys
@@ -44,10 +47,12 @@ path = None
 databaseList = []
 currentDB = []
 menuControl = 1
+rows = []
 
 
 def main():
     while menuControl != 0:
+        clearRows()
         compileDatabaseList()
         takeCommand()
         commandInterpt()
@@ -72,21 +77,65 @@ def commandInterpt():
             print('Now using Database '+ currentDB + '!')
         else:
             ##Send them back to the command loop
-            print("!Failed to use " + commandSplit[1] + " as it doesn't exist")
+            print("!Failed to use " + commandSplit[1])
     elif commandSplit[0] == 'DROP':
         if commandSplit[1] == 'TABLE':
-            pass
+            dropTable()
         elif commandSplit[1] == 'DATABASE':
             dropDatabase()
     elif commandSplit[0] == 'SELECT':
-        ##Will always be followed by * FROM tableName
-        pass
+        #Will always be followed by * FROM tableName
+        #Will need to be expanded for future projects
+        if currentDB != []:
+            fullFileRead()
+        else:
+            print('!Failed not currently in a database.')
     elif commandSplit[0] == 'ALTER':
-        pass
+        if commandSplit[1] == 'TABLE':
+            if commandSplit[3] == 'ADD':
+                alterTable()
     elif commandSplit[0] == '.EXIT':
         menuControl = 0
     else:
         print("!Failed: Command not recognized")
+def alterTable():
+    global commandSplit
+    fullName = os.path.join(getCurrentDir(),commandSplit[2]+'.csv')
+    tempList = []
+    for command in range(4, len(commandSplit),2):
+        tempCommand = commandSplit[command] + ' ' + commandSplit[command+1]
+        tempList.append(tempCommand)
+        print(tempCommand)
+    with open(fullName, 'w', encoding='UTF8',newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(argumentsSplit)
+        print(argumentsSplit)
+def clearRows():
+    global rows
+    rows = []
+def fullFileRead():
+    global commandSplit
+    fullName = os.path.join(getCurrentDir(), commandSplit[3] + '.csv')
+    try:
+        with open(fullName,"r",encoding="UTF8") as source:
+            reader = csv.reader(source)
+            for row in reader:
+                rows.append(row)
+            for row in rows:
+                for col in row:
+                   print('{:>5}'.format(col) + ' | ' , end= '')
+                print("\n")
+    except:
+        print("!Failed to read file.")
+
+def dropTable():
+    global commandSplit
+    fullName = os.path.join(getCurrentDir(), commandSplit[2] + '.csv')
+    try:
+        os.remove(fullName)
+        print('Dropped table ' + commandSplit[2])
+    except OSError:
+        print("!Failed could not drop table " + commandSplit[2] + ", may not be in current database.")
 
 def dropDatabase():
     global commandSplit
@@ -107,10 +156,14 @@ def createTable():
     fullName = os.path.join(tempDir,commandSplit[2]+'.csv')
     if os.path.exists(fullName) == False:
         try:
-            with open(fullName, 'w', encoding='UTF8',newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(argumentsSplit)
-            print("Table " + commandSplit[2] + " created!")
+            if argumentsSplit == ['']:
+                f = open(fullName, "x")
+            else:
+                with open(fullName, 'w', encoding='UTF8',newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(argumentsSplit)
+                    print(argumentsSplit)
+                print("Table " + commandSplit[2] + " created!")
         except:
             print("!Table failed to create: arguement format incorrect.")
     else:
