@@ -2,22 +2,7 @@
 # Date: 9/6/2021
 # Class: CS 457 Database Managment Systems 
 # Project: This project is intended to be a bare bones version of a DBMS that can create and delete databases(and their associated tables), create and delete tables (that will be in a subdirectory under the database), and query and update the tables. I would like to implement a GUI to work along side this project, but I am not sure how feasible that is with the time constraints.
-# Functionailites to implement:
-#   After the program has started, from the terminal you should be able to 
-#!       "CREATE DATABASE db_name" <enter> **Create a database directory to store tables 
-#!       "USE db_name" <enter> **Specify that the tables we will be working with are under a certain database
-#!       "CREATE TABLE test_tbl (a1 int, a2 char(9))" <enter> **Create a table with the dynamically specified contents
-#       "DROP DATABASE db_name" <enter> **Delete the database and its underlying contents
-#       "DROP TABLE test_tbl" <enter> **Delete the table and its contents, maybe add a warning message
-#       "SELECT * FROM test_tbl" <enter> **Display the table contents as they currently stand
-#       "ALTER TABLE test_tbl ADD a3 float" <enter> **Add an attribute to the selected table
 # Functions to implement
-#!   Database Create
-#!   Database Destroy
-#!   Table create
-#!   Table destroy
-#!   Query (Display Table contents)
-#   update Table
 #   Help function to display commands
 #   CREATE TABLE tbl_1 (a1 int, a2 varchar(20))
 #   CREATE TABLE tbl_2 (a1 Float, a2 varchar(40))
@@ -94,6 +79,7 @@ def commandInterpt():
         if commandSplit[1] == 'TABLE':
             if commandSplit[3] == 'ADD':
                 alterTable()
+                
     elif commandSplit[0] == '.EXIT':
         menuControl = 0
     else:
@@ -102,14 +88,18 @@ def alterTable():
     global commandSplit
     fullName = os.path.join(getCurrentDir(),commandSplit[2]+'.csv')
     tempList = []
+    existingRow = []
     for command in range(4, len(commandSplit),2):
         tempCommand = commandSplit[command] + ' ' + commandSplit[command+1]
         tempList.append(tempCommand)
-        print(tempCommand)
+    with open(fullName,'r',encoding='UTF8') as s:
+        reader = csv.reader(s)
+        existingRow = list(reader)
+    finalRow = existingRow[0] + tempList
     with open(fullName, 'w', encoding='UTF8',newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(argumentsSplit)
-        print(argumentsSplit)
+        writer.writerow(finalRow)
+    print("Updated Table " + commandSplit[2])
 def clearRows():
     global rows
     rows = []
@@ -162,7 +152,6 @@ def createTable():
                 with open(fullName, 'w', encoding='UTF8',newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow(argumentsSplit)
-                    print(argumentsSplit)
                 print("Table " + commandSplit[2] + " created!")
         except:
             print("!Table failed to create: arguement format incorrect.")
@@ -191,12 +180,13 @@ def takeCommand():
     tempInput = input('Enter Command: ')
     try:
         commandWhole, argumentsWhole = tempInput.split(' (')
-        ##This is needed to take off the trailing ')'
-        argumentsWhole = argumentsWhole.removesuffix(')')
+        ##This is needed to take off the trailing ');'
+        argumentsWhole = argumentsWhole.removesuffix(');')
         argumentsSplit = argumentsWhole.split(', ')
         commandSplit = commandWhole.split(' ')
     except ValueError:
-        commandSplit = tempInput.split(' ')
+        commandWhole = tempInput.removesuffix(';')
+        commandSplit = commandWhole.split(' ')
 
 
 main()
