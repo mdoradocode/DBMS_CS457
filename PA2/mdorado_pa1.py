@@ -58,18 +58,18 @@ def main():
 def commandInterpt():
     global commandSplit,currentDir,currentDB,menuControl,currentTable
     #All commands that begin with CREATE, which can be followed by TABLE or DATABASE
-    if commandSplit[0] == 'CREATE':
-        if commandSplit[1] == 'TABLE':
+    if commandSplit[0].upper() == 'CREATE':
+        if commandSplit[1].upper() == 'TABLE':
             if currentDB != []:
                 currentTable = commandSplit[2]
                 createTable()
                 compileTableList()
             else:
                 print("!Failed to make " + currentTable + " because you are not in a Database")
-        elif commandSplit[1] == 'DATABASE':
+        elif commandSplit[1].upper() == 'DATABASE':
                 createDatabase()
 
-    elif commandSplit[0] == 'USE':
+    elif commandSplit[0].upper() == 'USE':
         ##A Database will be the only command to follow this one
         if commandSplit[1] in databaseList:
             currentDB = commandSplit[1]
@@ -79,15 +79,15 @@ def commandInterpt():
             ##Send them back to the command loop
             print("!Failed to use " + commandSplit[1])
 
-    elif commandSplit[0] == 'DROP':
-        if commandSplit[1] == 'TABLE':
+    elif commandSplit[0].upper() == 'DROP':
+        if commandSplit[1].upper() == 'TABLE':
             currentTable = commandSplit[2]
             dropTable()
             compileTableList()
-        elif commandSplit[1] == 'DATABASE':
+        elif commandSplit[1].upper() == 'DATABASE':
             dropDatabase()
 
-    elif commandSplit[0] == 'SELECT':
+    elif commandSplit[0].upper() == 'SELECT':
         #Will always be followed by * FROM tableName
         #Will need to be expanded for future projects
         currentTable = commandSplit[3]
@@ -96,13 +96,13 @@ def commandInterpt():
         else:
             print('!Failed not currently in a database.')
 
-    elif commandSplit[0] == 'ALTER':
+    elif commandSplit[0].upper() == 'ALTER':
         if commandSplit[1] == 'TABLE':
             currentTable = commandSplit[2]
             if commandSplit[3] == 'ADD':
                 alterTable()
 
-    elif commandSplit[0] == 'insert':
+    elif commandSplit[0].upper() == 'INSERT':
         print(commandSplit)
         currentTable = commandSplit[2]
         if commandSplit[2]+'.csv' in tableList:
@@ -110,9 +110,11 @@ def commandInterpt():
         else:
             print('Failed')
 
-    elif commandSplit[0] == '.EXIT':
+    elif commandSplit[0].upper() == '.EXIT':
         menuControl = 0
 
+    elif commandSplit[0].upper() == 'UPDATE':
+        pass
     else:
         print("!Failed: Command not recognized")
 
@@ -258,6 +260,7 @@ def compileDatabaseList():
 def takeCommand():
     global commandWhole,argumentsWhole,argumentsSplit,commandSplit
     userInput = input('Enter Command: ')
+    print(userInput)
     try:
         #This is the clause for commands with attribute arguments to parse up
         commandWhole, argumentsWhole = userInput.split(' (')
