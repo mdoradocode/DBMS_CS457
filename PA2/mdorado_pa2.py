@@ -114,10 +114,32 @@ def commandInterpt():
         menuControl = 0
 
     elif commandSplit[0].upper() == 'UPDATE':
-        pass
+        currentTable = commandSplit[1]
+        if commandSplit[2].upper() == 'SET':
+            updateRecords()
+        else:
+            print("Failed")
     else:
         print("!Failed: Command not recognized")
 
+def findColumn(attribute):
+    fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
+    with open(fullName,"r",encoding="UTF8") as source:
+        reader = csv.reader(source)
+        header = next(reader)
+        print(header)
+        for col in header:
+            if col.startswith(attribute):
+                return header.index(col)
+    return "Attribute not present"
+        
+
+def updateRecords():
+    attributeToUpdate = findColumn(commandSplit[3])
+    if attributeToUpdate == "Attribute not present":
+        print("Unable to update record, attribute not present")
+    else:
+        pass
 
 #This method will allow for inserting of data into the predetermined fields of the database
 def insertValue():
@@ -260,7 +282,6 @@ def compileDatabaseList():
 def takeCommand():
     global commandWhole,argumentsWhole,argumentsSplit,commandSplit
     userInput = input('Enter Command: ')
-    print(userInput)
     try:
         #This is the clause for commands with attribute arguments to parse up
         commandWhole, argumentsWhole = userInput.split(' (')
