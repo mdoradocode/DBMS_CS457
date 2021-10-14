@@ -118,8 +118,54 @@ def commandInterpt():
             updateRecords()
         else:
             print("Failed")
+    elif commandSplit[0].upper() == 'DELETE':
+        if currentDB != []:
+            currentTable = commandSplit[2]
+            deleteRow()
+        else:
+            print('!Failed not currently in a database.')
+        
     else:
         print("!Failed: Command not recognized")
+
+def deleteRow():
+    changeCounter = 0
+    attributeToFind = findColumn(commandSplit[4])
+    fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
+    if attributeToFind == "Attribute not present":
+        print("Unable to update record, attribute not present")
+    else:
+        with open(fullName,"r",encoding="UTF8") as source:
+            reader = csv.reader(source)
+            header = next(reader)
+            tempFile = os.path.join(getCurrentDir(), 'tempFile.csv')
+            with open(tempFile, 'w', encoding='UTF8',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                for row in reader:
+                    if commandSplit[5] == '>':
+                        if float(row[attributeToFind]) > float(commandSplit[6]):
+                            changeCounter += 1
+                        else:
+                            writer.writerow(row)
+                    elif commandSplit[5] == '=':
+                        if row[attributeToFind] == commandSplit[6]:
+                            changeCounter += 1
+                        else:
+                            writer.writerow(row)
+                    elif commandSplit[5] == '<':
+                        if float(row[attributeToFind]) < float(commandSplit[6]):
+                            changeCounter += 1
+                        else:
+                            writer.writerow(row)
+        with open(tempFile, 'r', encoding='UTF8',newline='') as f:
+            reader = csv.reader(f)
+            with open(fullName,"w",encoding="UTF8") as destination:
+                writer = csv.writer(destination)
+                for row in reader:
+                    writer.writerow(row)
+        os.remove(tempFile)
+        print("{} record(s) deleted".format(changeCounter))
 
 def modifyRow(row,attributeToUpdate):
     row[attributeToUpdate] = commandSplit[5]
@@ -139,6 +185,7 @@ def findColumn(attribute):
 
 def updateRecords():
     changeCounter = 0
+    attributeToFindUpdate = findColumn(commandSplit[7])
     attributeToUpdate = findColumn(commandSplit[3])
     fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
     if attributeToUpdate == "Attribute not present":
@@ -150,7 +197,7 @@ def updateRecords():
             with open(tempFile, 'w', encoding='UTF8',newline='') as f:
                 writer = csv.writer(f)
                 for row in reader:
-                    if row[attributeToUpdate] == commandSplit[9]:
+                    if row[attributeToFindUpdate] == commandSplit[9]:
                         changeCounter += 1
                         row = modifyRow(row,attributeToUpdate)
                         writer.writerow(row)
@@ -163,11 +210,8 @@ def updateRecords():
                 for row in reader:
                     writer.writerow(row)
         os.remove(tempFile)
-        print(changeCounter + " record(s) modified")
-
-
-            
-            
+        print("{} record(s) modified".format(changeCounter))
+    
 
 
 #This method will allow for inserting of data into the predetermined fields of the database
@@ -176,6 +220,7 @@ def insertValue():
     with open(fullName, 'a', encoding='UTF8',newline='') as f:
         writer = csv.writer(f)
         writer.writerow(argumentsSplit)
+    print("1 new record inserted.")
 
 
 #This allows an attribute of a table to be added after the creation of a table
