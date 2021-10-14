@@ -103,7 +103,6 @@ def commandInterpt():
                 alterTable()
 
     elif commandSplit[0].upper() == 'INSERT':
-        print(commandSplit)
         currentTable = commandSplit[2]
         if commandSplit[2]+'.csv' in tableList:
             insertValue()
@@ -122,12 +121,16 @@ def commandInterpt():
     else:
         print("!Failed: Command not recognized")
 
+def modifyRow(row,attributeToUpdate):
+    row[attributeToUpdate] = commandSplit[5]
+    return row
+
+
 def findColumn(attribute):
     fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
     with open(fullName,"r",encoding="UTF8") as source:
         reader = csv.reader(source)
         header = next(reader)
-        print(header)
         for col in header:
             if col.startswith(attribute):
                 return header.index(col)
@@ -135,11 +138,37 @@ def findColumn(attribute):
         
 
 def updateRecords():
+    changeCounter = 0
     attributeToUpdate = findColumn(commandSplit[3])
+    fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
     if attributeToUpdate == "Attribute not present":
         print("Unable to update record, attribute not present")
     else:
-        pass
+        with open(fullName,"r",encoding="UTF8") as source:
+            reader = csv.reader(source)
+            tempFile = os.path.join(getCurrentDir(), 'tempFile.csv')
+            with open(tempFile, 'w', encoding='UTF8',newline='') as f:
+                writer = csv.writer(f)
+                for row in reader:
+                    if row[attributeToUpdate] == commandSplit[9]:
+                        changeCounter += 1
+                        row = modifyRow(row,attributeToUpdate)
+                        writer.writerow(row)
+                    else:
+                        writer.writerow(row)
+        with open(tempFile, 'r', encoding='UTF8',newline='') as f:
+            reader = csv.reader(f)
+            with open(fullName,"w",encoding="UTF8") as destination:
+                writer = csv.writer(destination)
+                for row in reader:
+                    writer.writerow(row)
+        os.remove(tempFile)
+        print(changeCounter + " record(s) modified")
+
+
+            
+            
+
 
 #This method will allow for inserting of data into the predetermined fields of the database
 def insertValue():
