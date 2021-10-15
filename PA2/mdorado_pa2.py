@@ -89,9 +89,9 @@ def commandInterpt():
 
     elif commandSplit[0].upper() == 'SELECT':
         #Will need to be expanded for future projects
-        currentTable = commandSplit[3]
         if currentDB != []:
             if commandSplit[1] == '*':
+                currentTable = commandSplit[3]
                 fullFileRead()
             else:
                 selectiveFileRead()
@@ -130,23 +130,57 @@ def commandInterpt():
     else:
         print("!Failed: Command not recognized")
 
-def countAttributesBeforeFrom(displayAttributes,indexOfFrom):
+def countAttributesBeforeFrom(displayAttributesIndex):
     for index in range(1, len(commandSplit)):
         if commandSplit[index].upper() == 'FROM':
-            indexOfFrom = index
-            break
+            return index
         else:
-            commandSplit[index].rstrip(",")
-            displayAttributes.append(commandSplit[index])
+            displayAttributesIndex.append(index)
         
 
 def selectiveFileRead():
-    displayAttributes = []
-    indexOfFrom = 0
-    countAttributesBeforeFrom(displayAttributes,indexOfFrom)
-    print(displayAttributes)
-    print(indexOfFrom)
-
+    global currentTable
+    displayAttributesIndex = []
+    indexOfFrom = countAttributesBeforeFrom(displayAttributesIndex)
+    currentTable = commandSplit[indexOfFrom + 1]
+    attributeToFind = findColumn(commandSplit[indexOfFrom + 3])
+    fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
+    if attributeToFind == "Attribute not present":
+        print("Unable to display record, attribute not present")
+    else:
+        with open(fullName,"r",encoding="UTF8") as source:
+            reader = csv.reader(source)
+            header = next(reader)
+            tempFile = os.path.join(getCurrentDir(), 'tempFile.csv')
+            with open(tempFile, 'w', encoding='UTF8',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                for row in reader:
+                    if commandSplit[indexOfFrom+4] == '>':
+                        if float(row[attributeToFind]) > float(commandSplit[indexOfFrom+5]):
+                            writer.writerow(row)
+                    elif commandSplit[indexOfFrom+4] == '=':
+                        if row[attributeToFind] == commandSplit[indexOfFrom+5]:
+                            writer.writerow(row)
+                    elif commandSplit[indexOfFrom+4] == '!=':
+                        if row[attributeToFind] != commandSplit[indexOfFrom+5]:
+                            writer.writerow(row)
+                    elif commandSplit[indexOfFrom+4] == '<':
+                        if float(row[attributeToFind]) < float(commandSplit[indexOfFrom+5]):
+                            writer.writerow(row)
+    with open(tempFile,"r",encoding="UTF8") as source:
+            reader = csv.reader(source)
+            for row in reader:
+                rows.append(row)
+            for row in rows:
+                printingIndex = 0
+                for col in row:
+                    if printingIndex in displayAttributesIndex:
+                        print('{:>15}'.format(col) + ' | ', end= '')
+                    printingIndex+=1
+                print("\n")
+    os.remove(tempFile)
+            
 def deleteRow():
     changeCounter = 0
     attributeToFind = findColumn(commandSplit[4])
@@ -169,6 +203,11 @@ def deleteRow():
                             writer.writerow(row)
                     elif commandSplit[5] == '=':
                         if row[attributeToFind] == commandSplit[6]:
+                            changeCounter += 1
+                        else:
+                            writer.writerow(row)
+                    elif commandSplit[5] == '!=':
+                        if row[attributeToFind] != commandSplit[6]:
                             changeCounter += 1
                         else:
                             writer.writerow(row)
@@ -396,6 +435,5 @@ def takeCommand():
         #This is the clause for commmands that do not involve attributes/arguements
             commandWhole = userInput.removesuffix(';')
             commandSplit = commandWhole.split(' ')
-
 
 main()
