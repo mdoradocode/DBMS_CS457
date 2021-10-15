@@ -88,11 +88,13 @@ def commandInterpt():
             dropDatabase()
 
     elif commandSplit[0].upper() == 'SELECT':
-        #Will always be followed by * FROM tableName
         #Will need to be expanded for future projects
         currentTable = commandSplit[3]
         if currentDB != []:
-            fullFileRead()
+            if commandSplit[1] == '*':
+                fullFileRead()
+            else:
+                selectiveFileRead()
         else:
             print('!Failed not currently in a database.')
 
@@ -127,6 +129,23 @@ def commandInterpt():
         
     else:
         print("!Failed: Command not recognized")
+
+def countAttributesBeforeFrom(displayAttributes,indexOfFrom):
+    for index in range(1, len(commandSplit)):
+        if commandSplit[index].upper() == 'FROM':
+            indexOfFrom = index
+            break
+        else:
+            commandSplit[index].rstrip(",")
+            displayAttributes.append(commandSplit[index])
+        
+
+def selectiveFileRead():
+    displayAttributes = []
+    indexOfFrom = 0
+    countAttributesBeforeFrom(displayAttributes,indexOfFrom)
+    print(displayAttributes)
+    print(indexOfFrom)
 
 def deleteRow():
     changeCounter = 0
