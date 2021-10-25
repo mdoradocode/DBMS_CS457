@@ -8,7 +8,7 @@
 import csv
 #This allows for easy file work and listing
 import os
-from os import path, walk
+from os import path, read, walk
 #This allows for the path of the current directory and script directory to be easily found
 import pathlib
 import sys
@@ -43,15 +43,58 @@ userInput = []
 #Used to keep track of the current table command if needed
 currentTable = []
 
+lastFileLineRead = ""
+
+tempFileLineRead = ""
+
+import time
+
 
 #---Main Program---#
 def main():
-    while menuControl != 0:
-        clearRows()
-        compileDatabaseList()
-        takeCommand()
-        commandInterpt()
+    global lastFileLineRead, tempFileLineRead
+    with open("PA2/PA2_test.sql",'r', encoding='UTF8') as filePointer:
+        while menuControl != 0:
+            print(menuControl)
+            lastFileLineRead = ""
+            tempFileLineRead = ""
+            readInFileLine(filePointer)
+            clearRows()
+            compileDatabaseList()
+            takeCommand()
+            commandInterpt()
+        
     print("All Done.")
+
+def readInFileLine(filePointer):
+    global lastFileLineRead, tempFileLineRead
+    tempFileLineRead = filePointer.readline()
+    if '-' in tempFileLineRead or tempFileLineRead.startswith('\n'):
+        readInFileLine(filePointer)
+    elif tempFileLineRead.endswith(';', len(tempFileLineRead)-2, len(tempFileLineRead)-1) == True:
+        if not lastFileLineRead:
+            tempFileLineRead = tempFileLineRead.rstrip('\n')
+            tempFileLineRead = tempFileLineRead.rstrip()
+            lastFileLineRead = tempFileLineRead
+        else:
+            tempFileLineRead = tempFileLineRead.rstrip('\n')
+            tempFileLineRead = tempFileLineRead.rstrip()
+            lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
+    elif tempFileLineRead.startswith('.'):
+        tempFileLineRead.rstrip('\n')
+        tempFileLineRead.rstrip()
+        lastFileLineRead = tempFileLineRead
+    else:
+        if not lastFileLineRead:
+            tempFileLineRead = tempFileLineRead.rstrip('\n')
+            tempFileLineRead = tempFileLineRead.rstrip()
+            lastFileLineRead = tempFileLineRead
+            readInFileLine(filePointer)
+        else:
+            tempFileLineRead = tempFileLineRead.rstrip('\n')
+            tempFileLineRead = tempFileLineRead.rstrip()
+            lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
+            readInFileLine(filePointer)
 
 #---Helper Functions---#
 #Parse out the user input into cascading if else statments to decide on program direction
@@ -281,7 +324,6 @@ def updateRecords():
         print("{} record(s) modified".format(changeCounter))
     
 
-
 #This method will allow for inserting of data into the predetermined fields of the database
 def insertValue():
     fullName = os.path.join(getCurrentDir(),currentTable+'.csv')
@@ -423,12 +465,12 @@ def compileDatabaseList():
 ##This takes in command line user prompts and turns them into lists for access
 def takeCommand():
     global commandWhole,argumentsWhole,argumentsSplit,commandSplit
-    userInput = input('Enter Command: ')
+    userInput = lastFileLineRead
     try:
         #This is the clause for commands with attribute arguments to parse up
         commandWhole, argumentsWhole = userInput.split(' (')
         ##This is needed to take off the trailing ');'
-        argumentsWhole = argumentsWhole.removesuffix(');')
+        argumentsWhole = argumentsWhole.rstrip(');')
         argumentsSplit = argumentsWhole.split(', ')
         commandSplit = commandWhole.split(' ')
     except ValueError:
@@ -436,14 +478,15 @@ def takeCommand():
         
             commandWhole, argumentsWhole = userInput.split('values(')
             ##This is needed to take off the trailing ');'
-            argumentsWhole = argumentsWhole.removesuffix(');')
+            argumentsWhole = argumentsWhole.rstrip(');')
             argumentsSplit = argumentsWhole.split(',')
             commandSplit = commandWhole.split(' ')
             argumentsSplit = list(map(str.strip,argumentsSplit))
 
         except ValueError:
         #This is the clause for commmands that do not involve attributes/arguements
-            commandWhole = userInput.removesuffix(';')
+            commandWhole = userInput.rstrip(';')
             commandSplit = commandWhole.split(' ')
+    print(commandSplit)
 
 main()

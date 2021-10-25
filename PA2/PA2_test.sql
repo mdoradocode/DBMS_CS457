@@ -12,19 +12,27 @@ insert into Product values(5,	'SuperGizmo', 	49.99);
 
 select * from Product;
 
-update Product set name = 'Gizmo' where name = 'SuperGizmo';
+update Product 
+set name = 'Gizmo' 
+where name = 'SuperGizmo';
 
-update Product set price = 14.99 where name = 'Gizmo';
-
-select * from Product;
-
-delete from Product where name = 'Gizmo';
-
-delete from Product where price > 150;
+update Product 
+set price = 14.99 
+where name = 'Gizmo';
 
 select * from Product;
 
-select name, price from Product where pid != 2;
+delete from product 
+where name = 'Gizmo';
+
+delete from product 
+where price > 150;
+
+select * from Product;
+
+select name, price 
+from product 
+where pid != 2;
 
 .exit
 
