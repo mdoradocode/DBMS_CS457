@@ -137,12 +137,14 @@ def countAttributesBeforeFrom(displayAttributesIndex):
         else:
             displayAttributesIndex.append(index)
         
-
+#This method displays the contents of a table, only displaying specific contents
 def selectiveFileRead():
     global currentTable
     displayAttributesIndex = []
+    #This is a number that gives the position of from, which is used to calculate other arguments of a selctive display
     indexOfFrom = countAttributesBeforeFrom(displayAttributesIndex)
     currentTable = commandSplit[indexOfFrom + 1]
+    #This is the attribute that is being searched for when determining what rows to display
     attributeToFind = findColumn(commandSplit[indexOfFrom + 3])
     fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
     if attributeToFind == "Attribute not present":
@@ -152,9 +154,11 @@ def selectiveFileRead():
             reader = csv.reader(source)
             header = next(reader)
             tempFile = os.path.join(getCurrentDir(), 'tempFile.csv')
+            #Write the desired information to a temp file
             with open(tempFile, 'w', encoding='UTF8',newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(header)
+                #This if else statment is to determine what kind of operator is being used for the searching attribute
                 for row in reader:
                     if commandSplit[indexOfFrom+4] == '>':
                         if float(row[attributeToFind]) > float(commandSplit[indexOfFrom+5]):
@@ -168,6 +172,7 @@ def selectiveFileRead():
                     elif commandSplit[indexOfFrom+4] == '<':
                         if float(row[attributeToFind]) < float(commandSplit[indexOfFrom+5]):
                             writer.writerow(row)
+    #Read and display the temp file 
     with open(tempFile,"r",encoding="UTF8") as source:
             reader = csv.reader(source)
             for row in reader:
@@ -182,12 +187,14 @@ def selectiveFileRead():
     os.remove(tempFile)
             
 def deleteRow():
+    #This is to record how many records are deleted
     changeCounter = 0
     attributeToFind = findColumn(commandSplit[4])
     fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
     if attributeToFind == "Attribute not present":
         print("Unable to update record, attribute not present")
     else:
+        #Open the original file to read
         with open(fullName,"r",encoding="UTF8") as source:
             reader = csv.reader(source)
             header = next(reader)
@@ -196,6 +203,7 @@ def deleteRow():
                 writer = csv.writer(f)
                 writer.writerow(header)
                 for row in reader:
+                    #This if else statment is to determine what kind of operator is being used for the searching attribute
                     if commandSplit[5] == '>':
                         if float(row[attributeToFind]) > float(commandSplit[6]):
                             changeCounter += 1
@@ -216,6 +224,7 @@ def deleteRow():
                             changeCounter += 1
                         else:
                             writer.writerow(row)
+        #read out the temp file to the original file
         with open(tempFile, 'r', encoding='UTF8',newline='') as f:
             reader = csv.reader(f)
             with open(fullName,"w",encoding="UTF8") as destination:
@@ -225,11 +234,12 @@ def deleteRow():
         os.remove(tempFile)
         print("{} record(s) deleted".format(changeCounter))
 
+#This just changes a row element at an index to the specified value
 def modifyRow(row,attributeToUpdate):
     row[attributeToUpdate] = commandSplit[5]
     return row
 
-
+#This searches the first row of a table to find the column with a matching attribute
 def findColumn(attribute):
     fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
     with open(fullName,"r",encoding="UTF8") as source:
@@ -240,7 +250,7 @@ def findColumn(attribute):
                 return header.index(col)
     return "Attribute not present"
         
-
+#This function write the table to a temp table, with modified values, and then write that temp file back to the original file
 def updateRecords():
     changeCounter = 0
     attributeToFindUpdate = findColumn(commandSplit[7])
