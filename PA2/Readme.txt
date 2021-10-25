@@ -5,25 +5,18 @@ For file reading, I use a CSV reader and writer, that I have to specify how the 
 I use many global variables to help keep track of what database, file, and command is being worked with. 
 
 PA2 Design Document Questions:
-Tuples are stored, seperated by commas, in rows within a csv file. The header or attributes will always be the first row in the file. Every row below that represents a tuple in the order in which they are inserted.
+Tuples are stored, separated by commas, in rows within a csv file. The header or attributes will always be the first row in the file. Every row below that represents a tuple in the order in which they are inserted.
 
 The implementations of the following methods for this project are defined as such:
-INSERT: This takes a tuple in, as a list of arguements from the user and then appends them to the end of the table that is selected
+INSERT: This takes a tuple in, as a list of arguments from the user and then appends them to the end of the table that is selected
 MODIFY: This takes in a table to look at, an attribute to search for, and an attribute to replace once the previous one is found. It writes all of the tuples to a new temp file, modifying tuples that match the search criteria, and then it creates a new version of the original file and writes the new data there.
 DELETE: This takes in a table to look at, an attribute to search for. It writes all the non matching attributes and writes them to a temp file and then writes the temp file back to the original problem
-SELECT: This does a special version of the rest of the code. It takes in arguments until it reaches 'from'. It then calculates the table and the type of arguement as well as the parameters using the relative position of 'from'
+SELECT: This does a special version of the rest of the code. It takes in arguments until it reaches 'from'. It then calculates the table and the type of arguments as well as the parameters using the relative position of 'from'
 
 **--EXECUTION AND COMPILE INSTRUCTIONS:--**
-Open the file location such that you see a directory filled with "mdorado_pa2.py", "PA2_test.sql", and "PA2.pdf" in your terminal or command prompt
+Open the file location such that you see a directory filled with "mdorado_pa2.py" and "PA2_test.sql" in your terminal or command prompt
 
-type "python3.9 mdorado_pa2.py" and press enter
+Make sure the test script labeled “PA2_test.sql” is in the same dir as the python file
 
-You will be met with a screen that says "Enter Command:" 
+type "python mdorado_pa2.py" and press enter, this will run the test file and give the correct output.
 
-From here you can begin to enter in the commands from the file named PA2_test.sql
-
-**NOTES FOR TEST COMMANDS:
-All commands must be entered in one line, seperated by spaces. Example: update Product set price = 14.99 where name = 'Gizmo';
-
-For the purpose of table creation and modification, the table names are case sensitive.
-Example: 'Product' and 'product' are seperate tables

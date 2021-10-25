@@ -53,9 +53,8 @@ import time
 #---Main Program---#
 def main():
     global lastFileLineRead, tempFileLineRead
-    with open("PA2/PA2_test.sql",'r', encoding='UTF8') as filePointer:
+    with open("PA2_test.sql",'r', encoding='UTF8') as filePointer:
         while menuControl != 0:
-            print(menuControl)
             lastFileLineRead = ""
             tempFileLineRead = ""
             readInFileLine(filePointer)
@@ -66,6 +65,7 @@ def main():
         
     print("All Done.")
 
+#This function acts as a mid point between command interpretation and the test file
 def readInFileLine(filePointer):
     global lastFileLineRead, tempFileLineRead
     tempFileLineRead = filePointer.readline()
@@ -81,8 +81,8 @@ def readInFileLine(filePointer):
             tempFileLineRead = tempFileLineRead.rstrip()
             lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
     elif tempFileLineRead.startswith('.'):
-        tempFileLineRead.rstrip('\n')
-        tempFileLineRead.rstrip()
+        tempFileLineRead = tempFileLineRead.rstrip('\n')
+        tempFileLineRead = tempFileLineRead.rstrip()
         lastFileLineRead = tempFileLineRead
     else:
         if not lastFileLineRead:
@@ -104,7 +104,7 @@ def commandInterpt():
     if commandSplit[0].upper() == 'CREATE':
         if commandSplit[1].upper() == 'TABLE':
             if currentDB != []:
-                currentTable = commandSplit[2]
+                currentTable = commandSplit[2].lower()
                 createTable()
                 compileTableList()
             else:
@@ -124,7 +124,7 @@ def commandInterpt():
 
     elif commandSplit[0].upper() == 'DROP':
         if commandSplit[1].upper() == 'TABLE':
-            currentTable = commandSplit[2]
+            currentTable = commandSplit[2].lower()
             dropTable()
             compileTableList()
         elif commandSplit[1].upper() == 'DATABASE':
@@ -134,7 +134,7 @@ def commandInterpt():
         #Will need to be expanded for future projects
         if currentDB != []:
             if commandSplit[1] == '*':
-                currentTable = commandSplit[3]
+                currentTable = commandSplit[3].lower()
                 fullFileRead()
             else:
                 selectiveFileRead()
@@ -143,29 +143,30 @@ def commandInterpt():
 
     elif commandSplit[0].upper() == 'ALTER':
         if commandSplit[1] == 'TABLE':
-            currentTable = commandSplit[2]
+            currentTable = commandSplit[2].lower()
             if commandSplit[3] == 'ADD':
                 alterTable()
 
     elif commandSplit[0].upper() == 'INSERT':
-        currentTable = commandSplit[2]
-        if commandSplit[2]+'.csv' in tableList:
+        currentTable = commandSplit[2].lower()
+        if commandSplit[2].lower()+'.csv' in tableList:
             insertValue()
         else:
+            print('here2')
             print('Failed')
 
     elif commandSplit[0].upper() == '.EXIT':
         menuControl = 0
 
     elif commandSplit[0].upper() == 'UPDATE':
-        currentTable = commandSplit[1]
+        currentTable = commandSplit[1].lower()
         if commandSplit[2].upper() == 'SET':
             updateRecords()
         else:
             print("Failed")
     elif commandSplit[0].upper() == 'DELETE':
         if currentDB != []:
-            currentTable = commandSplit[2]
+            currentTable = commandSplit[2].lower()
             deleteRow()
         else:
             print('!Failed not currently in a database.')
@@ -186,7 +187,7 @@ def selectiveFileRead():
     displayAttributesIndex = []
     #This is a number that gives the position of from, which is used to calculate other arguments of a selctive display
     indexOfFrom = countAttributesBeforeFrom(displayAttributesIndex)
-    currentTable = commandSplit[indexOfFrom + 1]
+    currentTable = commandSplit[indexOfFrom + 1].lower()
     #This is the attribute that is being searched for when determining what rows to display
     attributeToFind = findColumn(commandSplit[indexOfFrom + 3])
     fullName = os.path.join(getCurrentDir(), currentTable + '.csv')
@@ -412,7 +413,7 @@ def getCurrentDir():
 def createTable():
     global commandSplit
     tempDir = getCurrentDir()
-    fullName = os.path.join(tempDir,currentTable+'.csv')
+    fullName = os.path.join(tempDir,currentTable.lower()+'.csv')
     #This checks to make sure that the database doesnt already exist before trying to create the database
     if os.path.exists(fullName) == False:
         try:
@@ -487,6 +488,5 @@ def takeCommand():
         #This is the clause for commmands that do not involve attributes/arguements
             commandWhole = userInput.rstrip(';')
             commandSplit = commandWhole.split(' ')
-    print(commandSplit)
 
 main()
