@@ -47,13 +47,21 @@ lastFileLineRead = ""
 
 tempFileLineRead = ""
 
+indexFromWhere = 0
+
+attributeCompareList = []
+
+tableDict = {}
+
+attributeDict = {}
+
 import time
 
 
 #---Main Program---#
 def main():
     global lastFileLineRead, tempFileLineRead
-    with open("PA2_test.sql",'r', encoding='UTF8') as filePointer:
+    with open("PA3_test.sql",'r', encoding='UTF8') as filePointer:
         while menuControl != 0:
             lastFileLineRead = ""
             tempFileLineRead = ""
@@ -133,9 +141,15 @@ def commandInterpt():
     elif commandSplit[0].upper() == 'SELECT':
         #Will need to be expanded for future projects
         if currentDB != []:
+            optimizeSelect()
+            #Write a function to change on to where in the command split here
             if commandSplit[1] == '*':
-                currentTable = commandSplit[3].lower()
-                fullFileRead()
+                if 'where' in commandSplit:
+                    selectiveJoinFileRead()
+                else:
+                    currentTable = commandSplit[3].lower()
+                    print('here')
+                    fullFileRead()
             else:
                 selectiveFileRead()
         else:
@@ -152,7 +166,7 @@ def commandInterpt():
         if commandSplit[2].lower()+'.csv' in tableList:
             insertValue()
         else:
-            print('here2')
+
             print('Failed')
 
     elif commandSplit[0].upper() == '.EXIT':
@@ -174,13 +188,197 @@ def commandInterpt():
     else:
         print("!Failed: Command not recognized")
 
+#This method finds the number of attributes before from
 def countAttributesBeforeFrom(displayAttributesIndex):
     for index in range(1, len(commandSplit)):
         if commandSplit[index].upper() == 'FROM':
             return index
         else:
             displayAttributesIndex.append(index)
-        
+
+#This method takes in various queries and optimizes the statment for use
+def optimizeSelect():
+    global commandSplit, indexFromWhere
+    indexFromWhere = 0
+    if 'join'in commandSplit:
+        commandSplit.remove('join')
+        commandSplit = ['where' if x == 'on' else x for x in commandSplit]
+        if 'left' in commandSplit:
+            commandSplit.remove('left')
+            commandSplit.insert(commandSplit.index('where')-indexFromWhere, 'left')
+            indexFromWhere += 1
+        elif 'right' in commandSplit:
+            commandSplit.remove('right')
+            commandSplit.insert(commandSplit.index('where')-indexFromWhere, 'right')
+            indexFromWhere += 1
+        if 'inner' in commandSplit:
+            commandSplit.remove('inner')
+            commandSplit.insert(commandSplit.index('where')-indexFromWhere, 'inner')
+            indexFromWhere += 1
+        elif 'outer' in commandSplit:
+            commandSplit.remove('outer')
+            commandSplit.insert(commandSplit.index('where')-indexFromWhere, 'outer')
+            indexFromWhere += 1
+    commandSplit = [arguements.rstrip(',') for arguements in commandSplit]
+
+#This method creates a list of attributes to look at between tables and will be evaluated in sets of two
+def createSelectAttributeDict():
+    global attributeCompareList
+    thisDict = {}
+    whereIndex = commandSplit.index('where')
+    itemIndex = whereIndex + 1
+    while itemIndex < len(commandSplit):
+        if commandSplit[itemIndex] in ('=','>','<','<=', '>='):
+            attributeCompareList = commandSplit[itemIndex]
+        else:
+            attribute = commandSplit[itemIndex].split('.')
+            thisDict[attribute[0]] = attribute[1]
+        itemIndex+=1
+    return thisDict
+    
+#This method creates a list of tables that will need to be compared to eachother, and will be looked at in pairs of two
+def createSelectTableDict():
+    thisDict = {}
+    whereIndex = commandSplit.index('where')
+    fromIndex = commandSplit.index('from')
+    itemIndex = 0
+    while itemIndex < len(commandSplit):
+        if itemIndex > fromIndex and itemIndex < (whereIndex-indexFromWhere):
+            thisDict[commandSplit[itemIndex].lower()] = commandSplit[itemIndex+1].lower()
+            itemIndex += 2
+        else:
+            itemIndex += 1
+    return thisDict
+
+#This method merges two tables into one table based on the type of join provided
+def mergeTables(table1Path, table2Path,attributecomaprisonIndex,attributeCompareList,tempFile):
+    global currentTable
+    #The code below this an above the if statement creates the index value for the columns that will be compared between the two tables
+    currentTable = table1Path
+    valuesView = attributeDict.values()
+    valuesIterator = iter(valuesView)
+    value = next(valuesIterator)
+    table1ColIndex = findColumn(value)
+    currentTable = table2Path
+    value = next(valuesIterator)
+    table2ColIndex = findColumn(value)
+    #If this is an outer left join
+    if 'left' in commandSplit:
+        with open(tempFile,"w",encoding='UTF8') as tempFileSource:
+            tempFileWriter = csv.writer(tempFileSource)
+            with open(table1Path + '.csv',"r",encoding="UTF8") as table1Source:
+                table1Reader = csv.reader(table1Source)
+                table1Header = next(table1Reader)
+                with open(table2Path + '.csv', "r", encoding="UTF8") as table2Source:
+                    table2Reader = csv.reader(table2Source)
+                    table2Header = next(table2Reader)
+                    tempFileWriter.writerow(table1Header+table2Header)
+                    for table1Row in table1Reader:
+                        noMatchBit = 0
+                        for table2Row in table2Reader:
+                            if attributeCompareList[attributecomaprisonIndex] == '>':
+                                if table1Row[table1ColIndex] > table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                                    noMatchBit = 1
+                            elif attributeCompareList[attributecomaprisonIndex] == '=':
+                                if table1Row[table1ColIndex] == table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                                    noMatchBit = 1
+                            elif attributeCompareList[attributecomaprisonIndex] == '!=':
+                                if table1Row[table1ColIndex] != table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                                    noMatchBit = 1
+                            elif attributeCompareList[attributecomaprisonIndex] == '<':
+                                if table1Row[table1ColIndex] < table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                                    noMatchBit = 1
+                        if noMatchBit == 0:
+                            tempFileWriter.writerow(table1Row)
+                        table2Source.seek(0)
+
+    #This is if it is an outer right join
+    elif 'right' in commandSplit:
+        with open(tempFile,"w",encoding='UTF8') as tempFileSource:
+            tempFileWriter = csv.writer(tempFileSource)
+            with open(table1Path + '.csv',"r",encoding="UTF8") as table1Source:
+                table1Reader = csv.reader(table1Source)
+                table1Header = next(table1Reader)
+                with open(table2Path + '.csv', "r", encoding="UTF8") as table2Source:
+                    table2Reader = csv.reader(table2Source)
+                    table2Header = next(table2Reader)
+                    tempFileWriter.writerow(table1Header+table2Header)
+                    for table1Row in table1Reader:
+                        noMatchBit = 0
+                        for table2Row in table2Reader:
+                            if attributeCompareList[attributecomaprisonIndex] == '>':
+                                if table1Row[table1ColIndex] > table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                            elif attributeCompareList[attributecomaprisonIndex] == '=':
+                                if table1Row[table1ColIndex] == table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                            elif attributeCompareList[attributecomaprisonIndex] == '!=':
+                                if table1Row[table1ColIndex] != table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                            elif attributeCompareList[attributecomaprisonIndex] == '<':
+                                if table1Row[table1ColIndex] < table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                        if noMatchBit == 0:
+                                    tempList = []
+                                    for x in table1Row:
+                                        tempList.append('')
+                                    tempFileWriter.writerow(tempList + table2Row)
+                        table2Source.seek(0) 
+    #this is if its an inner join 
+    else:
+        with open(tempFile,"w",encoding='UTF8') as tempFileSource:
+            tempFileWriter = csv.writer(tempFileSource)
+            with open(table1Path + '.csv',"r",encoding="UTF8") as table1Source:
+                table1Reader = csv.reader(table1Source)
+                table1Header = next(table1Reader)
+                with open(table2Path + '.csv', "r", encoding="UTF8") as table2Source:
+                    table2Reader = csv.reader(table2Source)
+                    table2Header = next(table2Reader)
+                    tempFileWriter.writerow(table1Header+table2Header)
+                    for table1Row in table1Reader:
+                        for table2Row in table2Reader:
+                            if attributeCompareList[attributecomaprisonIndex] == '>':
+                                if table1Row[table1ColIndex] > table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                            elif attributeCompareList[attributecomaprisonIndex] == '=':
+                                if table1Row[table1ColIndex] == table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                            elif attributeCompareList[attributecomaprisonIndex] == '!=':
+                                if table1Row[table1ColIndex] != table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                            elif attributeCompareList[attributecomaprisonIndex] == '<':
+                                if table1Row[table1ColIndex] < table2Row[table2ColIndex]:
+                                    tempFileWriter.writerow(table1Row+table2Row)
+                        table2Source.seek(0)                      
+
+#This method will look at a number of files and make them into a singular display
+def selectiveJoinFileRead(): 
+    global currentTable,commandSplit, attributeCompareList,tableDict,attributeDict
+    tableDict = createSelectTableDict()
+    attributeDict = createSelectAttributeDict()
+    filePathList = []
+    tableToCompareIndex = 0
+    attributeCompareIndex = 0
+    #Makes file path objects based on the tables to compare
+    for tableName, tabelSH in tableDict.items():
+        filePathList.append(os.path.join(getCurrentDir(), tableName.lower()))
+    #This is the temp file that will be used to display the results of the query
+    tempFile = os.path.join(getCurrentDir(), 'tempFile' + '.csv')
+    
+    #This while loop isnt useful for this project, but it will allow for more that two tables to be compared
+    while tableToCompareIndex < len(tableDict):
+        mergeTables(filePathList[tableToCompareIndex], filePathList[tableToCompareIndex+1], attributeCompareIndex, attributeCompareList, tempFile)
+        tableToCompareIndex += 2
+        attributeCompareIndex += 1
+
+    currentTable = 'tempFile'
+    fullFileRead()
+    os.remove(tempFile)
+
 #This method displays the contents of a table, only displaying specific contents
 def selectiveFileRead():
     global currentTable
@@ -324,7 +522,6 @@ def updateRecords():
         os.remove(tempFile)
         print("{} record(s) modified".format(changeCounter))
     
-
 #This method will allow for inserting of data into the predetermined fields of the database
 def insertValue():
     fullName = os.path.join(getCurrentDir(),currentTable+'.csv')
@@ -332,7 +529,6 @@ def insertValue():
         writer = csv.writer(f)
         writer.writerow(argumentsSplit)
     print("1 new record inserted.")
-
 
 #This allows an attribute of a table to be added after the creation of a table
 def alterTable():
@@ -357,12 +553,10 @@ def alterTable():
         writer.writerow(finalRow)
     print("Updated Table " + currentTable)
 
-
 #Make the rows variable an empty list so that it may be used again to read the tables
 def clearRows():
     global rows
     rows = []
-
 
 #Read the whole file top to bottom and display its contents 
 def fullFileRead():
@@ -381,7 +575,6 @@ def fullFileRead():
     except:
         print("!Failed to read file.")
 
-
 #Delete a table
 def dropTable():
     global commandSplit
@@ -392,7 +585,6 @@ def dropTable():
     except OSError:
         print("!Failed could not drop table " + currentTable + ", may not be in current database.")
 
-
 #Delete a database
 def dropDatabase():
     global commandSplit
@@ -402,12 +594,10 @@ def dropDatabase():
     except OSError:
         print('!Failed could not drop database ' + commandSplit[2])
 
-
 #Get the current directory and modify the actual variable to be working in a descrete database
 def getCurrentDir():
     global currentDB, currentDir
     return os.path.join(currentDir, currentDB)
-
 
 #Create a table
 def createTable():
@@ -431,7 +621,6 @@ def createTable():
     else:
         print("!Failed to create table " + currentTable + " because it already exists")
 
-
 #Create a database
 def createDatabase():
     ##global path
@@ -442,7 +631,6 @@ def createDatabase():
         print("Database " + databaseName + " created!")
     except OSError as error:
         print('!Failed to create database "' + databaseName + '" because it already exists.')
-
 
 ##This method will compile a list of all the tables currently in the working database
 def compileTableList():
@@ -461,20 +649,20 @@ def compileDatabaseList():
     for (dirPath, dirNames, fileNames) in walk(currentDir):
         databaseList.extend(dirNames)
 
-
-
 ##This takes in command line user prompts and turns them into lists for access
 def takeCommand():
     global commandWhole,argumentsWhole,argumentsSplit,commandSplit
     userInput = lastFileLineRead
     try:
         #This is the clause for commands with attribute arguments to parse up
-        commandWhole, argumentsWhole = userInput.split(' (')
+        commandWhole, argumentsWhole = userInput.split('(',1)
         ##This is needed to take off the trailing ');'
         argumentsWhole = argumentsWhole.rstrip(');')
         argumentsSplit = argumentsWhole.split(', ')
         commandSplit = commandWhole.split(' ')
-    except ValueError:
+        if commandSplit[len(commandSplit)-1] == 'values':
+            raise ValueError   
+    except ValueError as err:
         try:
         
             commandWhole, argumentsWhole = userInput.split('values(')
@@ -484,7 +672,7 @@ def takeCommand():
             commandSplit = commandWhole.split(' ')
             argumentsSplit = list(map(str.strip,argumentsSplit))
 
-        except ValueError:
+        except ValueError as err2:
         #This is the clause for commmands that do not involve attributes/arguements
             commandWhole = userInput.rstrip(';')
             commandSplit = commandWhole.split(' ')

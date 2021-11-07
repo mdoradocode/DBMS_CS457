@@ -4,19 +4,14 @@ To implement this DBMS, I parsed out the user input, making patterns in the comm
 For file reading, I use a CSV reader and writer, that I have to specify how the reading and writing is done
 I use many global variables to help keep track of what database, file, and command is being worked with. 
 
-PA2 Design Document Questions:
-Tuples are stored, separated by commas, in rows within a csv file. The header or attributes will always be the first row in the file. Every row below that represents a tuple in the order in which they are inserted.
+PA3 Design Document Questions:
+Joins are implemented by taking in the statement and optimizing it to be understood by the programming. It then checks the join conditions (left, right, inner, and outer) and writes the corresponding rows to a temp file for display
 
-The implementations of the following methods for this project are defined as such:
-INSERT: This takes a tuple in, as a list of arguments from the user and then appends them to the end of the table that is selected
-MODIFY: This takes in a table to look at, an attribute to search for, and an attribute to replace once the previous one is found. It writes all of the tuples to a new temp file, modifying tuples that match the search criteria, and then it creates a new version of the original file and writes the new data there.
-DELETE: This takes in a table to look at, an attribute to search for. It writes all the non matching attributes and writes them to a temp file and then writes the temp file back to the original problem
-SELECT: This does a special version of the rest of the code. It takes in arguments until it reaches 'from'. It then calculates the table and the type of arguments as well as the parameters using the relative position of 'from'
 
 **--EXECUTION AND COMPILE INSTRUCTIONS:--**
-Open the file location such that you see a directory filled with "mdorado_pa2.py" and "PA2_test.sql" in your terminal or command prompt
+Open the file location such that you see a directory filled with "mdorado_pa3.py" and "PA3_test.sql" in your terminal or command prompt
 
-Make sure the test script labeled “PA2_test.sql” is in the same dir as the python file
+Make sure the test script labeled “PA3_test.sql” is in the same dir as the python file
 
-type "python mdorado_pa2.py" and press enter, this will run the test file and give the correct output.
+type "python mdorado_pa3.py" and press enter, this will run the test file and give the correct output.
 

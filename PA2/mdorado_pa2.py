@@ -53,13 +53,14 @@ import time
 #---Main Program---#
 def main():
     global lastFileLineRead, tempFileLineRead
-    with open("PA2_test.sql",'r', encoding='UTF8') as filePointer:
+    with open("PA2/PA2_test.sql",'r', encoding='UTF8') as filePointer:
         while menuControl != 0:
             lastFileLineRead = ""
             tempFileLineRead = ""
             readInFileLine(filePointer)
             clearRows()
             compileDatabaseList()
+            #print(commandSplit)
             takeCommand()
             commandInterpt()
         
