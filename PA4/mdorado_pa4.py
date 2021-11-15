@@ -55,13 +55,16 @@ tableDict = {}
 
 attributeDict = {}
 
+processID = 1
+
+readInFlag = 0
 import time
 
 
 #---Main Program---#
 def main():
     global lastFileLineRead, tempFileLineRead
-    with open("PA3/PA3_test.sql",'r', encoding='UTF8') as filePointer:
+    with open("PA4/PA4_test.sql",'r', encoding='UTF8') as filePointer:
         while menuControl != 0:
             lastFileLineRead = ""
             tempFileLineRead = ""
@@ -69,40 +72,65 @@ def main():
             clearRows()
             compileDatabaseList()
             takeCommand()
+            #print(commandSplit)
+            #print(argumentsSplit)
             commandInterpt()
         
     print("All Done.")
 
+def trimTempFileLineRead():
+    global tempFileLineRead
+    if "--" in tempFileLineRead:
+        ##print(tempFileLineRead)
+        tempFileLineRead,throwAway = tempFileLineRead.split(';',1)
+        tempFileLineRead = tempFileLineRead +';'+'\n'
 #This function acts as a mid point between command interpretation and the test file
 def readInFileLine(filePointer):
-    global lastFileLineRead, tempFileLineRead
+    global lastFileLineRead, tempFileLineRead,readInFlag
     tempFileLineRead = filePointer.readline()
-    if '-' in tempFileLineRead or tempFileLineRead.startswith('\n'):
+    if tempFileLineRead.startswith('\n'):
         readInFileLine(filePointer)
-    elif tempFileLineRead.endswith(';', len(tempFileLineRead)-2, len(tempFileLineRead)-1) == True:
-        if not lastFileLineRead:
-            tempFileLineRead = tempFileLineRead.rstrip('\n')
-            tempFileLineRead = tempFileLineRead.rstrip()
-            lastFileLineRead = tempFileLineRead
+    elif tempFileLineRead.startswith("-- On "):
+        if tempFileLineRead.find(str(processID)) != -1:
+            readInFlag = 1
+            ##print("flag set to 1")
         else:
-            tempFileLineRead = tempFileLineRead.rstrip('\n')
-            tempFileLineRead = tempFileLineRead.rstrip()
-            lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
+            readInFlag = 0
+            ##print("flag set 0")
+        readInFileLine(filePointer)
     elif tempFileLineRead.startswith('.'):
         tempFileLineRead = tempFileLineRead.rstrip('\n')
         tempFileLineRead = tempFileLineRead.rstrip()
         lastFileLineRead = tempFileLineRead
-    else:
-        if not lastFileLineRead:
-            tempFileLineRead = tempFileLineRead.rstrip('\n')
-            tempFileLineRead = tempFileLineRead.rstrip()
-            lastFileLineRead = tempFileLineRead
-            readInFileLine(filePointer)
+    elif readInFlag == 1:
+        ##print("Doing Work")
+        ##print(tempFileLineRead)
+        trimTempFileLineRead()
+        if tempFileLineRead.endswith(';', len(tempFileLineRead)-2, len(tempFileLineRead)-1) == True:
+            ##print("do we get here")
+            if not lastFileLineRead:
+                tempFileLineRead = tempFileLineRead.rstrip('\n')
+                tempFileLineRead = tempFileLineRead.rstrip()
+                lastFileLineRead = tempFileLineRead
+            else:
+                tempFileLineRead = tempFileLineRead.rstrip('\n')
+                tempFileLineRead = tempFileLineRead.rstrip()
+                lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
         else:
-            tempFileLineRead = tempFileLineRead.rstrip('\n')
-            tempFileLineRead = tempFileLineRead.rstrip()
-            lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
-            readInFileLine(filePointer)
+            if not lastFileLineRead:
+                tempFileLineRead = tempFileLineRead.rstrip('\n')
+                tempFileLineRead = tempFileLineRead.rstrip()
+                lastFileLineRead = tempFileLineRead
+                readInFileLine(filePointer)
+            else:
+                tempFileLineRead = tempFileLineRead.rstrip('\n')
+                tempFileLineRead = tempFileLineRead.rstrip()
+                lastFileLineRead = lastFileLineRead + ' ' + tempFileLineRead
+                readInFileLine(filePointer)
+    elif tempFileLineRead.startswith('-'):
+        readInFileLine(filePointer) 
+    else:
+        readInFileLine(filePointer) 
 
 #---Helper Functions---#
 #Parse out the user input into cascading if else statments to decide on program direction
@@ -148,7 +176,6 @@ def commandInterpt():
                     selectiveJoinFileRead()
                 else:
                     currentTable = commandSplit[3].lower()
-                    print('here')
                     fullFileRead()
             else:
                 selectiveFileRead()
@@ -655,9 +682,10 @@ def takeCommand():
     userInput = lastFileLineRead
     try:
         #This is the clause for commands with attribute arguments to parse up
-        commandWhole, argumentsWhole = userInput.split('(',1)
+        commandWhole, argumentsWhole = userInput.split(' (')
         ##This is needed to take off the trailing ');'
         argumentsWhole = argumentsWhole.rstrip(');')
+        ##print("hello " +argumentsWhole)
         argumentsSplit = argumentsWhole.split(', ')
         commandSplit = commandWhole.split(' ')
         if commandSplit[len(commandSplit)-1] == 'values':
@@ -665,7 +693,7 @@ def takeCommand():
     except ValueError as err:
         try:
         
-            commandWhole, argumentsWhole = userInput.split('values(')
+            commandWhole, argumentsWhole = userInput.split(' (')
             ##This is needed to take off the trailing ');'
             argumentsWhole = argumentsWhole.rstrip(');')
             argumentsSplit = argumentsWhole.split(',')
