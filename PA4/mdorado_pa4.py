@@ -15,6 +15,8 @@ import sys
 #This is needed to delete directories
 import shutil
 
+import time
+
 ##---Global Variables---##
 #Take in user input commands
 commandWhole = None
@@ -55,15 +57,32 @@ tableDict = {}
 
 attributeDict = {}
 
-processID = 1
+processID = 0
 
 readInFlag = 0
+
+tempCommandsCache = []
+
+lockPath = os.path.join(pathlib.Path(__file__).parent.resolve(),'lockFile')
+
+processIDDir = os.path.join(pathlib.Path(__file__).parent.resolve(),'processIDDir')
+
+lockFlag = 0
 import time
+import random
 
 
 #---Main Program---#
 def main():
-    global lastFileLineRead, tempFileLineRead
+    global lastFileLineRead, tempFileLineRead, processID
+    time.sleep(random.uniform(0,1))
+    if not os.path.isdir(processIDDir):
+        os.mkdir(processIDDir)
+        setProcessID()
+    else:
+        time.sleep(1)
+        setProcessID()    
+        
     with open("PA4/PA4_test.sql",'r', encoding='UTF8') as filePointer:
         while menuControl != 0:
             lastFileLineRead = ""
@@ -75,9 +94,29 @@ def main():
             #print(commandSplit)
             #print(argumentsSplit)
             commandInterpt()
-        
+            time.sleep(.5)
+    #if os.path.exists(processIDPath):
+        #time.sleep(.5)
+        #os.remove(processIDPath)
+    destroyProcess()
     print("All Done.")
 
+def setProcessID():
+    global processID
+    processID = len([name for name in os.listdir(processIDDir) if os.path.isfile(os.path.join(processIDDir, name))]) + 1
+    tempName = os.path.join(processIDDir, "process" + str(processID))
+    f=open(tempName,'x')
+    time.sleep(1)
+    
+def destroyProcess():
+    global processID
+    tempName = os.path.join(processIDDir, "process" + str(processID))
+    os.remove(tempName)
+    if len([name for name in os.listdir(processIDDir) if os.path.isfile(os.path.join(processIDDir, name))]) == 0:
+        shutil.rmtree(processIDDir)
+def updateTempCommandCache():
+    tempCommandsCache.append(lastFileLineRead)
+    #print(tempCommandsCache)
 def trimTempFileLineRead():
     global tempFileLineRead
     if "--" in tempFileLineRead:
@@ -135,7 +174,7 @@ def readInFileLine(filePointer):
 #---Helper Functions---#
 #Parse out the user input into cascading if else statments to decide on program direction
 def commandInterpt():
-    global commandSplit,currentDir,currentDB,menuControl,currentTable
+    global commandSplit,currentDir,currentDB,menuControl,currentTable,lastFileLineRead,lockFlag
     #All commands that begin with CREATE, which can be followed by TABLE or DATABASE
     if commandSplit[0].upper() == 'CREATE':
         if commandSplit[1].upper() == 'TABLE':
@@ -198,11 +237,13 @@ def commandInterpt():
 
     elif commandSplit[0].upper() == '.EXIT':
         menuControl = 0
+        if os.path.exists(lockPath):
+            os.remove(lockPath)
 
     elif commandSplit[0].upper() == 'UPDATE':
         currentTable = commandSplit[1].lower()
         if commandSplit[2].upper() == 'SET':
-            updateRecords()
+            updateTempCommandCache()
         else:
             print("Failed")
     elif commandSplit[0].upper() == 'DELETE':
@@ -211,10 +252,35 @@ def commandInterpt():
             deleteRow()
         else:
             print('!Failed not currently in a database.')
-        
+    elif commandSplit[0].upper() == 'BEGIN' and commandSplit[1].upper() == 'TRANSACTION':
+        acquireLock()
+    elif commandSplit[0].upper() == 'COMMIT':
+        if lockFlag == 1:
+            for command in tempCommandsCache:
+                lastFileLineRead = command
+                takeCommand()
+                time.sleep(1)
+                updateRecords()
+            lockFlag = [0]
+            with open(lockPath, 'w', encoding='UTF8',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(lockFlag)
+            lockFlag = 0
+            print("Transaction Commited")
+        elif lockFlag == 0:
+            print("Transaction Abort")
     else:
         print("!Failed: Command not recognized")
 
+def acquireLock():
+    global lockPath,lockFlag
+    print("Begin Transaction:")
+    if os.path.exists(lockPath):
+        lockFlag = 0
+    else:
+        f=open(lockPath,'x')
+        lockFlag = 1
+    
 #This method finds the number of attributes before from
 def countAttributesBeforeFrom(displayAttributesIndex):
     for index in range(1, len(commandSplit)):
