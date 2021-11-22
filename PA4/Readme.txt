@@ -9,9 +9,18 @@ Joins are implemented by taking in the statement and optimizing it to be underst
 
 
 **--EXECUTION AND COMPILE INSTRUCTIONS:--**
-Open the file location such that you see a directory filled with "mdorado_pa3.py" and "PA3_test.sql" in your terminal or command prompt
+Open the file location such that you see a directory filled with "mdorado_pa4.py" and "PA4_test.sql" in your terminal or command prompt
 
 Make sure the test script labeled “PA3_test.sql” is in the same dir as the python file
 
-type "python mdorado_pa3.py" and press enter, this will run the test file and give the correct output.
+There are two methods for exection that are outlined in the test videos included with submission.
+1) Executing with two terminals open to the same program file
+    Open two terminals and navigate to the same directory (containing the program file and the test sql)
+    run the following command on each as quickly as you can (I reccomend pre typing the command in each, then pressing enter on each)
+        python3 mdorado_pa4.py
+    You should see an output on terminal 1 and 2 for process 1 and 2 respectively
+2) Executing with a multi-thread method
+    Open a terminal up to the directory containing mdorado_pa4.py, the test sql file, and the runScripts.py. Type the following command in
+        python3 runScripts.py
+    Both processes will run in a multithread environment, the results/terminal output will be messy, but it is correct
 
